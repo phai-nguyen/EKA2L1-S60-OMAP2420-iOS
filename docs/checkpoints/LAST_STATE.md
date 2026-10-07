@@ -29,10 +29,10 @@ Status: PROBE1 IOS BUILD PASSED — DEVICE EVIDENCE PENDING
 - Run [37663349331](https://github.com/phai-nguyen/EKA2L1-S60-OMAP2420-iOS/actions/runs/37663349331), commit `b5a4833644462fd1cdc4d9b79ce8555153e0eae2`, passed every build, verification and packaging step and published both unsigned IPA variants.
 - That run took about 31 minutes. Its ccache restore missed and the post-job save reported that the cache directory did not exist. CMake's compiler launcher only applies to Make/Ninja generators; the iOS script uses Xcode. Removed the unused ccache installation/cache steps, kept the Xcode/FFmpeg/base-app caches, and switched upstream retrieval to a pinned shallow fetch plus eight parallel shallow submodule jobs. A clean local checkout verified the exact upstream SHA and all 47 recursive submodules; the new CI run is still required to measure the speedup.
 - Run [37670989308](https://github.com/phai-nguyen/EKA2L1-S60-OMAP2420-iOS/actions/runs/37670989308), commit `6af1b7c`, passed; source checkout took 2m21s versus about 3m30s before the optimization.
-- Added an iOS VPL/FPSX import path on top of the existing EKA2L1 firmware installer. It lets users choose a security-scoped firmware folder and a VPL within it, using the first VPL variant. Local patch composition against the pinned upstream passes; CI and an RM-159 on-device run are pending.
+- Added an iOS VPL/FPSX import path on top of the existing EKA2L1 firmware installer. It lets users choose a security-scoped firmware folder and a VPL within it, using the first VPL variant. Local patch composition against the pinned upstream passed. [Run 37673462081](https://github.com/phai-nguyen/EKA2L1-S60-OMAP2420-iOS/actions/runs/37673462081), commit `741ffc5`, passed the VPL patch stage, app build, iOS 15/Vietnamese verification and both IPA packaging stages. An RM-159 on-device install/run is pending.
 
 ## Not done
-- The optimized checkout workflow has not yet been verified on GitHub Actions.
+- No RM-159 on-device VPL install or PROBE1 runtime log yet.
 - No OMAP2420 MMIO implementation yet.
 - No RM-159 firmware device log from PROBE1 yet.
 - No N82/N93/E90 branches yet.

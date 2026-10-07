@@ -55,7 +55,9 @@ Committed:
 - build workflow applies and verifies marker `N95OMAP-PROBE1`.
 - iOS diagnostic log pack `N95OMAP-LOGPACK1`: `EKA2L1.log`, `EKA2L1_TakeThis.log`, `EKA2L1_Persistent.log`, `EKA2L1_Persistent-prev.log` under `Documents/data/`.
 
-PROBE1 only records the first unsupported RM-159 access with direction, address, PC, LR, CPSR and thread. It deliberately does not fabricate MMIO values or broad-map memory.
+PROBE1 logs EKA2 access violations with direction, address, PC, LR, CPSR and thread. The current patch logs every such violation and relies on the RM-159 device-test contract for this branch; it does not gate by firmware identity or latch only the first fault. It deliberately does not fabricate MMIO values or broad-map memory.
+
+Latest verified build result: [run 37625926247](https://github.com/phai-nguyen/EKA2L1-S60-OMAP2420-iOS/actions/runs/37625926247) failed at Swift compilation on commit `85a5089`. All three patch stages passed, but no IPA was packaged. The iOS 15 shim's `CompatAnyShape.makePath` closure now declares `@Sendable` to satisfy the current SDK's `Shape` conformance. The rebuild is pending; see `docs/checkpoints/LAST_STATE.md` for exact evidence.
 
 No RM-159 device log has been collected from this repository yet.
 

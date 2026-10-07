@@ -36,7 +36,8 @@ replace(swift,
     "    @State private var firmwareFolder: PickedFile?\n"
     "    @State private var firmwareFiles: [URL] = []\n"
     "    @State private var vplFiles: [URL] = []\n"
-    "    @State private var selectedVPLIndex = 0\n")
+    "    @State private var selectedVPLIndex = 0\n"
+    "    @State private var showingFirmwareInstallError = false\n")
 replace(swift,
     "        // Both flavours run the same way: hold the security scope open across a",
     "        // Every source holds its security scope open across a")
@@ -99,6 +100,22 @@ replace(swift,
                 pick(result, target: pickTarget)''',
     '''                          allowsMultipleSelection: pickTarget == .firmwareFiles) { result in
                 pick(result, target: pickTarget)''')
+replace(swift,
+    '''            .interactiveDismissDisabled(installing)
+        }
+    }
+
+    private func fileRow''',
+    '''            .interactiveDismissDisabled(installing)
+            .alert("common.error", isPresented: $showingFirmwareInstallError) {
+                Button("common.ok", role: .cancel) { showingFirmwareInstallError = false }
+            } message: {
+                Text(errorMessage ?? String(localized: "common.error"))
+            }
+        }
+    }
+
+    private func fileRow''')
 replace(swift,
     '        case .archive: return archiveTypes\n',
     '        case .archive: return archiveTypes\n'
@@ -185,7 +202,11 @@ replace(swift,
             }
 
         case .firmware:
-            guard vplFiles.indices.contains(selectedVPLIndex) else { return }
+            guard vplFiles.indices.contains(selectedVPLIndex) else {
+                errorMessage = String(localized: "import.error.noVPL")
+                showingFirmwareInstallError = true
+                return
+            }
             let vplName = vplFiles[selectedVPLIndex].lastPathComponent
             if let firmwareFolder {
                 let vplPath = vplFiles[selectedVPLIndex].path
@@ -195,7 +216,11 @@ replace(swift,
                 }
             } else {
                 let files = firmwareFiles
-                guard !files.isEmpty else { return }
+                guard !files.isEmpty else {
+                    errorMessage = String(localized: "import.error.noVPL")
+                    showingFirmwareInstallError = true
+                    return
+                }
                 urls = files
                 run = { progress, cancel in
                     let manager = FileManager.default
@@ -220,6 +245,10 @@ replace(swift,
             }
         }
 ''')
+replace(swift,
+    '                    errorMessage = installMessage(for: result)\n',
+    '                    errorMessage = installMessage(for: result)\n'
+    '                    showingFirmwareInstallError = source == .firmware\n')
 
 swift_bridge = app / "EKA2L1Bridge.swift"
 replace(swift_bridge,

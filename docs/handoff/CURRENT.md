@@ -40,19 +40,30 @@ Keep EKA2L1 as the emulator and Symbian HLE core. Add a narrow OMAP2420/device c
 Historical QEMU OMAP2/N8x0 code is donor/reference material, not a drop-in Nokia N95 machine.
 
 ## Current implementation state
-Project bootstrap is complete.
-No OMAP2420 implementation patch has been added yet.
-No RM-159 device log has been collected in this repository yet.
+Project bootstrap and first source survey are complete.
+
+Confirmed in pinned upstream:
+- RM-159 is already recognized as Nokia N95.
+- CPU memory accesses are routed through the EKA2L1 MMU callbacks.
+- Failed accesses reach `kernel_system::cpu_handle_access_violation`.
+- The existing EKA2 handler does not repair unknown hardware accesses.
+- `kernel_system` can reach the current device, so diagnostics can be gated to RM-159.
+
+Committed:
+- research note: `docs/research/EKA2L1-INSERTION-POINTS-2026-10-07.md`
+- first diagnostic patch: `patches/code/apply-n95-omap2420-probe1.py`
+- build workflow now applies and verifies marker `N95OMAP-PROBE1`.
+
+PROBE1 only records the first unsupported RM-159 access with direction, address, PC, LR, CPSR and thread. It deliberately does not fabricate MMIO values or broad-map memory.
+
+No RM-159 device log has been collected from this repository yet.
 
 ## Next engineering task
-Survey the pinned EKA2L1 source for:
-1. RM-159/N95 device recognition and S60v3 FP1 paths.
-2. Current ARM memory-access and exception hooks suitable for device MMIO.
-3. Existing device/machine abstraction that can host an N95 profile.
-4. Timer/interrupt abstractions that can be extended without breaking HLE.
-5. The smallest instrumentation patch needed to collect first RM-159 evidence.
-
-Do not implement broad OMAP2420 MMIO before this survey is complete.
+1. Verify the iOS build containing `N95OMAP-PROBE1`.
+2. Install an RM-159 firmware on that build.
+3. Capture the first exact `N95OMAP-PROBE1` line and surrounding log.
+4. Classify that address using RM-159/OMAP2420 evidence and QEMU donor code.
+5. Only then design the first real MMIO/register behavior.
 
 ## New-chat starter prompt
 Continue the dedicated N95 OMAP2420 project from `docs/handoff/CURRENT.md` in repo `phai-nguyen/EKA2L1-S60-OMAP2420-iOS`, branch `n95-rm159`. This project targets Nokia N95 RM-159 / S60v3 FP1 on iOS 15+. It is separate from RH-29/N-Gage, RM-356/5800, RM-596/N8 and WP7. Read `AGENTS.md`, `docs/checkpoints/LAST_STATE.md`, and the hardware notes before changing code.

@@ -11,16 +11,6 @@ if "N95OMAP-PROBE1" in text:
     print("N95 OMAP2420 PROBE1 already applied")
     raise SystemExit(0)
 
-include_anchor = "#include <config/config.h>\n"
-include_insert = (
-    "#include <config/config.h>\n"
-    "#include <system/devices.h>\n"
-    "#include <system/epoc.h>\n"
-)
-if include_anchor not in text:
-    raise SystemExit("PROBE1: include anchor not found")
-text = text.replace(include_anchor, include_insert, 1)
-
 old = """    bool kernel_system::cpu_handle_access_violation(arm::core *core, const address occurred, const bool read) {
         if (is_eka1()) {
 """

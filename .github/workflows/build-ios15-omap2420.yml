@@ -1,0 +1,161 @@
+name: Build EKA2L1 S60 OMAP2420 iOS15 Base
+
+on:
+  push:
+    branches:
+      - n95-rm159
+    paths:
+      - ".github/workflows/build-ios15-omap2420.yml"
+      - "patches/code/**"
+      - "patches/**/*.patch"
+      - "patches/**/*.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eka2l1-omap2420-ios15-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-ios-vi:
+    runs-on: macos-26
+    timeout-minutes: 120
+    env:
+      EKA2L1_IOS_CONFIGURATION: Release
+      EKA2L1_IOS_DEPLOYMENT_TARGET: 15.0
+      # iOS 18.7 can kill a sideloaded app while the upstream JIT probe executes a generated page.
+      # Localization test builds use the interpreter so the app can always reach the UI.
+      EKA2L1_IOS_DYNARMIC: OFF
+      EKA2L1_UPSTREAM_COMMIT: 3afd85d249f4eef16071f6fdbbbf44e49e4072f7
+      # Must match the provisioning App ID suffix used by the current ESign profile.
+      EKA2L1_ESIGN_BUNDLE_ID: app.lavender1865.valley8348
+
+    steps:
+      - name: Checkout Vietnamese localization branch
+        uses: actions/checkout@v7
+
+      - name: Clone official EKA2L1 source
+        run: |
+          set -euo pipefail
+          git clone https://github.com/EKA2L1/EKA2L1.git upstream
+          cd upstream
+          git checkout "$EKA2L1_UPSTREAM_COMMIT"
+          git submodule update --init --recursive
+
+      - name: Apply iOS 15 compatibility layer
+        run: |
+          set -euo pipefail
+          python3 patches/code/apply-ios15-compat.py upstream
+
+      - name: Install ccache
+        run: brew install ccache
+
+      - name: Restore compiler cache
+        uses: actions/cache@v6
+        with:
+          path: ~/Library/Caches/ccache
+          key: eka2l1-ios-ccache-${{ runner.os }}-ios${{ env.EKA2L1_IOS_DEPLOYMENT_TARGET }}-${{ env.EKA2L1_UPSTREAM_COMMIT }}-${{ github.sha }}
+          restore-keys: |
+            eka2l1-ios-ccache-${{ runner.os }}-ios${{ env.EKA2L1_IOS_DEPLOYMENT_TARGET }}-${{ env.EKA2L1_UPSTREAM_COMMIT }}-
+
+      - name: Restore incremental Xcode build
+        uses: actions/cache@v6
+        with:
+          path: upstream/build/ios-device
+          key: eka2l1-ios-build-${{ runner.os }}-ios${{ env.EKA2L1_IOS_DEPLOYMENT_TARGET }}-${{ env.EKA2L1_UPSTREAM_COMMIT }}-${{ github.sha }}
+          restore-keys: |
+            eka2l1-ios-build-${{ runner.os }}-ios${{ env.EKA2L1_IOS_DEPLOYMENT_TARGET }}-${{ env.EKA2L1_UPSTREAM_COMMIT }}-
+
+      - name: Apply Vietnamese string catalogs
+        run: |
+          set -euo pipefail
+          cp patches/Localizable.xcstrings upstream/src/emu/ios/Resources/Localizable.xcstrings
+          cp patches/InfoPlist.xcstrings upstream/src/emu/ios/Resources/InfoPlist.xcstrings
+
+
+      - name: Cache iOS FFmpeg
+        uses: actions/cache@v6
+        with:
+          path: upstream/src/external/ffmpeg/ios/device
+          key: ffmpeg-ios-device-vi-ios${{ env.EKA2L1_IOS_DEPLOYMENT_TARGET }}-${{ env.EKA2L1_UPSTREAM_COMMIT }}
+
+      - name: Build unsigned iPhone app
+        working-directory: upstream
+        run: ./scripts/build_ios.sh device
+
+      - name: Verify iOS 15 deployment target
+        run: |
+          set -euo pipefail
+          APP="upstream/build/ios-device/src/emu/ios/${EKA2L1_IOS_CONFIGURATION}-iphoneos/EKA2L1.app"
+          minimum=$(/usr/libexec/PlistBuddy -c "Print :MinimumOSVersion" "$APP/Info.plist")
+          echo "MinimumOSVersion=$minimum"
+          test "$minimum" = "15.0"
+
+      - name: Verify Vietnamese resources
+        run: |
+          set -euo pipefail
+          APP="upstream/build/ios-device/src/emu/ios/${EKA2L1_IOS_CONFIGURATION}-iphoneos/EKA2L1.app"
+          test -d "$APP"
+          test -f "$APP/vi.lproj/Localizable.strings"
+          test -f "$APP/vi.lproj/InfoPlist.strings"
+          echo "Vietnamese resources are present in the app bundle."
+          /usr/bin/plutil -p "$APP/vi.lproj/Localizable.strings" | head -40
+
+      - name: Stage reusable base app
+        run: |
+          set -euo pipefail
+          APP="upstream/build/ios-device/src/emu/ios/${EKA2L1_IOS_CONFIGURATION}-iphoneos/EKA2L1.app"
+          rm -rf base-app
+          mkdir -p base-app
+          cp -R "$APP" base-app/EKA2L1.app
+          rm -rf base-app/EKA2L1.app/_CodeSignature
+
+      - name: Seed reusable base app cache
+        uses: actions/cache@v6
+        with:
+          path: base-app
+          key: eka2l1-ios-base-${{ runner.os }}-ios${{ env.EKA2L1_IOS_DEPLOYMENT_TARGET }}-${{ env.EKA2L1_UPSTREAM_COMMIT }}-${{ hashFiles('.github/workflows/build-ios15-omap2420.yml', 'patches/code/**', 'patches/**/*.patch', 'patches/**/*.py') }}
+
+      - name: Package unsigned IPAs
+        run: |
+          set -euo pipefail
+          APP="upstream/build/ios-device/src/emu/ios/${EKA2L1_IOS_CONFIGURATION}-iphoneos/EKA2L1.app"
+
+          rm -rf ipa-vanilla ipa-esign
+          rm -f EKA2L1-iOS-Vietnamese-unsigned.ipa EKA2L1-iOS-Vietnamese-ESignMatch-unsigned.ipa
+
+          # Vanilla artifact: keeps upstream com.eka2l1.emulator.
+          mkdir -p ipa-vanilla/Payload
+          cp -R "$APP" ipa-vanilla/Payload/EKA2L1.app
+          rm -rf ipa-vanilla/Payload/EKA2L1.app/_CodeSignature
+          (cd ipa-vanilla && /usr/bin/zip -qry ../EKA2L1-iOS-Vietnamese-unsigned.ipa Payload)
+
+          # ESign-match artifact: CFBundleIdentifier is preset to the provisioning
+          # App ID suffix that was confirmed on-device to restore Files selection.
+          mkdir -p ipa-esign/Payload
+          cp -R "$APP" ipa-esign/Payload/EKA2L1.app
+          rm -rf ipa-esign/Payload/EKA2L1.app/_CodeSignature
+          /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $EKA2L1_ESIGN_BUNDLE_ID"             ipa-esign/Payload/EKA2L1.app/Info.plist
+          actual=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier"             ipa-esign/Payload/EKA2L1.app/Info.plist)
+          test "$actual" = "$EKA2L1_ESIGN_BUNDLE_ID"
+          (cd ipa-esign && /usr/bin/zip -qry ../EKA2L1-iOS-Vietnamese-ESignMatch-unsigned.ipa Payload)
+
+          ls -lh EKA2L1-iOS-Vietnamese-unsigned.ipa                  EKA2L1-iOS-Vietnamese-ESignMatch-unsigned.ipa
+
+      - name: Upload Vietnamese vanilla IPA
+        uses: actions/upload-artifact@v7
+        with:
+          name: EKA2L1-iOS-Vietnamese-IPA
+          path: EKA2L1-iOS-Vietnamese-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload Vietnamese ESign-match IPA
+        uses: actions/upload-artifact@v7
+        with:
+          name: EKA2L1-iOS-Vietnamese-ESignMatch-IPA
+          path: EKA2L1-iOS-Vietnamese-ESignMatch-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 14

@@ -34,9 +34,11 @@ jobs:
 
     steps:
       - name: Checkout Vietnamese localization branch
+        id: checkout
         uses: actions/checkout@v7
 
       - name: Clone official EKA2L1 source
+        id: clone
         run: |
           set -euo pipefail
           git clone https://github.com/EKA2L1/EKA2L1.git upstream
@@ -45,11 +47,13 @@ jobs:
           git submodule update --init --recursive
 
       - name: Apply iOS 15 compatibility layer
+        id: ios15
         run: |
           set -euo pipefail
           python3 patches/code/apply-ios15-compat.py upstream
 
       - name: Apply persistent diagnostic logs
+        id: logpack
         run: |
           set -euo pipefail
           python3 patches/code/apply-ios-diagnostic-logs.py upstream
@@ -58,6 +62,7 @@ jobs:
           grep -q 'EKA2L1_Persistent-prev.log' upstream/src/emu/common/src/log.cpp
 
       - name: Apply N95 OMAP2420 PROBE1
+        id: probe1
         run: |
           set -euo pipefail
           python3 patches/code/apply-n95-omap2420-probe1.py upstream
@@ -96,10 +101,15 @@ jobs:
           key: ffmpeg-ios-device-vi-ios${{ env.EKA2L1_IOS_DEPLOYMENT_TARGET }}-${{ env.EKA2L1_UPSTREAM_COMMIT }}
 
       - name: Build unsigned iPhone app
+        id: build
         working-directory: upstream
-        run: ./scripts/build_ios.sh device
+        run: |
+          set -o pipefail
+          mkdir -p ../diagnostics
+          ./scripts/build_ios.sh device 2>&1 | tee ../diagnostics/build-ios.log
 
       - name: Verify iOS 15 deployment target
+        id: verify_target
         run: |
           set -euo pipefail
           APP="upstream/build/ios-device/src/emu/ios/${EKA2L1_IOS_CONFIGURATION}-iphoneos/EKA2L1.app"
@@ -108,6 +118,7 @@ jobs:
           test "$minimum" = "15.0"
 
       - name: Verify Vietnamese resources
+        id: verify_vi
         run: |
           set -euo pipefail
           APP="upstream/build/ios-device/src/emu/ios/${EKA2L1_IOS_CONFIGURATION}-iphoneos/EKA2L1.app"
@@ -133,6 +144,7 @@ jobs:
           key: eka2l1-ios-base-${{ runner.os }}-ios${{ env.EKA2L1_IOS_DEPLOYMENT_TARGET }}-${{ env.EKA2L1_UPSTREAM_COMMIT }}-${{ hashFiles('.github/workflows/build-ios15-omap2420.yml', 'patches/code/**', 'patches/**/*.patch', 'patches/**/*.py') }}
 
       - name: Package unsigned IPAs
+        id: package
         run: |
           set -euo pipefail
           APP="upstream/build/ios-device/src/emu/ios/${EKA2L1_IOS_CONFIGURATION}-iphoneos/EKA2L1.app"
@@ -157,6 +169,86 @@ jobs:
           (cd ipa-esign && /usr/bin/zip -qry ../EKA2L1-iOS-Vietnamese-ESignMatch-unsigned.ipa Payload)
 
           ls -lh EKA2L1-iOS-Vietnamese-unsigned.ipa                  EKA2L1-iOS-Vietnamese-ESignMatch-unsigned.ipa
+
+      - name: Generate build status diagnostics
+        if: always()
+        env:
+          CHECKOUT_OUTCOME: ${{ steps.checkout.outcome }}
+          CLONE_OUTCOME: ${{ steps.clone.outcome }}
+          IOS15_OUTCOME: ${{ steps.ios15.outcome }}
+          LOGPACK_OUTCOME: ${{ steps.logpack.outcome }}
+          PROBE1_OUTCOME: ${{ steps.probe1.outcome }}
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+          VERIFY_TARGET_OUTCOME: ${{ steps.verify_target.outcome }}
+          VERIFY_VI_OUTCOME: ${{ steps.verify_vi.outcome }}
+          PACKAGE_OUTCOME: ${{ steps.package.outcome }}
+        run: |
+          set +e
+          mkdir -p diagnostics
+
+          {
+            echo "EKA2L1 N95 OMAP2420 iOS BUILD STATUS"
+            echo "timestamp_utc=$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "branch=${GITHUB_REF_NAME}"
+            echo "commit=${GITHUB_SHA}"
+            echo "workflow=${GITHUB_WORKFLOW}"
+            echo "run_id=${GITHUB_RUN_ID}"
+            echo "run_number=${GITHUB_RUN_NUMBER}"
+            echo "run_attempt=${GITHUB_RUN_ATTEMPT}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "upstream_commit=${EKA2L1_UPSTREAM_COMMIT}"
+            echo "ios_deployment_target=${EKA2L1_IOS_DEPLOYMENT_TARGET}"
+            echo
+            echo "[STEP OUTCOMES]"
+            echo "checkout=${CHECKOUT_OUTCOME}"
+            echo "clone_upstream=${CLONE_OUTCOME}"
+            echo "ios15_compat=${IOS15_OUTCOME}"
+            echo "diagnostic_log_pack=${LOGPACK_OUTCOME}"
+            echo "n95_probe1=${PROBE1_OUTCOME}"
+            echo "build_unsigned_app=${BUILD_OUTCOME}"
+            echo "verify_ios15=${VERIFY_TARGET_OUTCOME}"
+            echo "verify_vietnamese=${VERIFY_VI_OUTCOME}"
+            echo "package_ipa=${PACKAGE_OUTCOME}"
+          } > diagnostics/BUILD-STATUS.txt
+
+          if [ -f diagnostics/build-ios.log ]; then
+            grep -Ei '(^|[^a-z])(fatal error:|error:|undefined symbols|linker command failed|BUILD FAILED|CMake Error|ninja: build stopped|Process completed with exit code)' diagnostics/build-ios.log               | tail -n 250 > diagnostics/BUILD-ERRORS.txt || true
+            tail -n 400 diagnostics/build-ios.log > diagnostics/BUILD-TAIL.txt || true
+          else
+            {
+              echo "No build-ios.log was created."
+              echo "The workflow failed or was cancelled before the compiler build step."
+              echo "See BUILD-STATUS.txt for the last completed setup stage."
+            } > diagnostics/BUILD-ERRORS.txt
+          fi
+
+          {
+            echo "## N95 OMAP2420 build status"
+            echo
+            echo "| Stage | Outcome |"
+            echo "|---|---|"
+            echo "| Checkout | ${CHECKOUT_OUTCOME} |"
+            echo "| Clone upstream | ${CLONE_OUTCOME} |"
+            echo "| iOS 15 compatibility | ${IOS15_OUTCOME} |"
+            echo "| Diagnostic log pack | ${LOGPACK_OUTCOME} |"
+            echo "| N95 PROBE1 | ${PROBE1_OUTCOME} |"
+            echo "| Build app | ${BUILD_OUTCOME} |"
+            echo "| Verify iOS 15 | ${VERIFY_TARGET_OUTCOME} |"
+            echo "| Verify Vietnamese | ${VERIFY_VI_OUTCOME} |"
+            echo "| Package IPA | ${PACKAGE_OUTCOME} |"
+            echo
+            echo "Diagnostic artifact: **EKA2L1-N95-OMAP2420-BUILD-STATUS**"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload build status diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: EKA2L1-N95-OMAP2420-BUILD-STATUS
+          path: diagnostics/
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Upload Vietnamese vanilla IPA
         uses: actions/upload-artifact@v7

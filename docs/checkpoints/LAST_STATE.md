@@ -1,6 +1,6 @@
 # LAST STATE — N95 RM-159
 
-Status: BOOTSTRAP COMPLETE
+Status: PROBE1 COMMITTED — BUILD/DEVICE EVIDENCE PENDING
 
 ## Completed
 - Created dedicated repository `phai-nguyen/EKA2L1-S60-OMAP2420-iOS`.
@@ -11,10 +11,17 @@ Status: BOOTSTRAP COMPLETE
 - Added hard project-boundary documentation and `AGENTS.md`.
 - Added OMAP2420, N95 RM-159, and QEMU donor research notes.
 
+## Additional completed work
+- Surveyed the pinned EKA2L1 memory/exception path.
+- Confirmed RM-159 device recognition already exists upstream.
+- Identified `kernel_system::cpu_handle_access_violation` as a clean first diagnostic interception point.
+- Added RM-159-only `N95OMAP-PROBE1` logging with read/write, address, PC, LR, CPSR and thread.
+- Updated the iOS build workflow to apply and statically verify PROBE1.
+
 ## Not done
+- PROBE1 build result has not yet been verified in this checkpoint.
 - No OMAP2420 MMIO implementation yet.
-- No N95-specific runtime instrumentation yet.
-- No RM-159 firmware test from this repository yet.
+- No RM-159 firmware device log from PROBE1 yet.
 - No N82/N93/E90 branches yet.
 
 ## Invariants
@@ -25,4 +32,4 @@ Status: BOOTSTRAP COMPLETE
 - Prefer exact PC/LR/address/value evidence before implementing hardware behavior.
 
 ## Next checkpoint condition
-Advance this checkpoint only after the EKA2L1 source survey identifies the exact insertion points for N95 hardware compatibility and the first diagnostic patch is committed.
+Advance this checkpoint after the PROBE1 iOS build passes and a real RM-159 run yields the first exact access-violation evidence.

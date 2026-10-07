@@ -26,7 +26,7 @@ replace(swift,
     "// Device-install Form: ROM/RPKG, 7z archive, or VPL/FPSX firmware folder.")
 replace(swift,
     "private enum PickTarget { case rom, rpkg, archive }",
-    "private enum PickTarget { case rom, rpkg, archive, firmwareFolder }")
+    "private enum PickTarget { case rom, rpkg, archive, firmwareFolder, firmwareFiles }")
 replace(swift,
     "        case archive\n    }\n\n    @State private var source: SourceKind",
     "        case archive\n        case firmware\n    }\n\n    @State private var source: SourceKind")
@@ -34,6 +34,7 @@ replace(swift,
     "    @State private var archive: PickedFile?\n",
     "    @State private var archive: PickedFile?\n"
     "    @State private var firmwareFolder: PickedFile?\n"
+    "    @State private var firmwareFiles: [URL] = []\n"
     "    @State private var vplFiles: [URL] = []\n"
     "    @State private var selectedVPLIndex = 0\n")
 replace(swift,
@@ -60,6 +61,10 @@ replace(swift,
                         Button { pickTarget = .firmwareFolder; showingImporter = true } label: {
                             fileRow(title: String(localized: "import.firmwareFolder"),
                                     value: firmwareFolder?.name)
+                        }
+                        Button { pickTarget = .firmwareFiles; showingImporter = true } label: {
+                            fileRow(title: String(localized: "import.firmwareFiles"),
+                                    value: firmwareFiles.isEmpty ? nil : String(firmwareFiles.count))
                         }
                         if !vplFiles.isEmpty {
                             Picker("import.firmwareVPL", selection: $selectedVPLIndex) {
@@ -90,17 +95,44 @@ replace(swift,
     '                        .disabled(source == .looseFiles ? (rom == nil) :\n'
     '                                  source == .archive ? (archive == nil) : vplFiles.isEmpty)')
 replace(swift,
+    '''                          allowsMultipleSelection: false) { result in
+                pick(result, target: pickTarget)''',
+    '''                          allowsMultipleSelection: pickTarget == .firmwareFiles) { result in
+                pick(result, target: pickTarget)''')
+replace(swift,
     '        case .archive: return archiveTypes\n',
     '        case .archive: return archiveTypes\n'
-    '        case .firmwareFolder: return [.folder]\n')
+    '        case .firmwareFolder: return [.folder]\n'
+    '        case .firmwareFiles: return [.data]\n')
 replace(swift,
     '        case .archive: return "7z"\n',
     '        case .archive: return "7z"\n'
-    '        case .firmwareFolder: return ""\n')
+    '        case .firmwareFolder: return ""\n'
+    '        case .firmwareFiles: return ""\n')
 replace(swift,
     '''        guard case .success(let urls) = result, let url = urls.first else { return }
         let kind = expectedExtension(for: target)''',
     '''        guard case .success(let urls) = result, let url = urls.first else { return }
+        if target == .firmwareFiles {
+            let names = urls.map(\\.lastPathComponent)
+            guard Set(names.map { $0.lowercased() }).count == names.count else {
+                errorMessage = String(localized: "import.error.duplicateFirmwareFile")
+                return
+            }
+            let candidates = urls.filter {
+                $0.pathExtension.caseInsensitiveCompare("vpl") == .orderedSame
+            }.sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
+            guard !candidates.isEmpty else {
+                errorMessage = String(localized: "import.error.noVPL")
+                return
+            }
+            firmwareFolder = nil
+            firmwareFiles = urls
+            vplFiles = candidates
+            selectedVPLIndex = 0
+            errorMessage = nil
+            return
+        }
         if target == .firmwareFolder {
             let scoped = url.startAccessingSecurityScopedResource()
             defer { if scoped { url.stopAccessingSecurityScopedResource() } }
@@ -118,6 +150,7 @@ replace(swift,
                     return
                 }
                 firmwareFolder = PickedFile(name: url.lastPathComponent, url: url)
+                firmwareFiles = []
                 vplFiles = candidates
                 selectedVPLIndex = 0
                 errorMessage = nil
@@ -132,7 +165,7 @@ replace(swift,
 replace(swift,
     '        case .archive: archive = picked\n',
     '        case .archive: archive = picked\n'
-    '        case .firmwareFolder: break\n')
+    '        case .firmwareFolder, .firmwareFiles: break\n')
 replace(swift,
     '''        case .archive:
             guard let archive else { return }
@@ -152,11 +185,38 @@ replace(swift,
             }
 
         case .firmware:
-            guard let firmwareFolder, vplFiles.indices.contains(selectedVPLIndex) else { return }
-            let vplPath = vplFiles[selectedVPLIndex].path
-            urls = [firmwareFolder.url]
-            run = { progress, cancel in
-                EKA2L1Bridge.installDevice(vplPath: vplPath, progress: progress, cancelCheck: cancel)
+            guard vplFiles.indices.contains(selectedVPLIndex) else { return }
+            let vplName = vplFiles[selectedVPLIndex].lastPathComponent
+            if let firmwareFolder {
+                let vplPath = vplFiles[selectedVPLIndex].path
+                urls = [firmwareFolder.url]
+                run = { progress, cancel in
+                    EKA2L1Bridge.installDevice(vplPath: vplPath, progress: progress, cancelCheck: cancel)
+                }
+            } else {
+                let files = firmwareFiles
+                guard !files.isEmpty else { return }
+                urls = files
+                run = { progress, cancel in
+                    let manager = FileManager.default
+                    let staged = manager.temporaryDirectory.appendingPathComponent(
+                        "n95-vpl-" + UUID().uuidString, isDirectory: true)
+                    do {
+                        try manager.createDirectory(at: staged, withIntermediateDirectories: true)
+                        defer { try? manager.removeItem(at: staged) }
+                        for (index, file) in files.enumerated() {
+                            if cancel() { return .cancelled }
+                            try manager.copyItem(at: file, to: staged.appendingPathComponent(file.lastPathComponent))
+                            progress(0.1 * Double(index + 1) / Double(files.count))
+                        }
+                        if cancel() { return .cancelled }
+                        return EKA2L1Bridge.installDevice(
+                            vplPath: staged.appendingPathComponent(vplName).path,
+                            progress: { progress(0.1 + 0.9 * $0) }, cancelCheck: cancel)
+                    } catch {
+                        return .generalFailure
+                    }
+                }
             }
         }
 ''')
@@ -164,8 +224,8 @@ replace(swift,
 swift_bridge = app / "EKA2L1Bridge.swift"
 replace(swift_bridge,
     '    nonisolated static func bootDevice(at index: Int) -> Bool {',
-    '''    // The caller keeps the containing folder security-scoped while the core
-    // reads the VPL and its adjacent FPSX files.
+    '''    // The caller keeps the containing folder security-scoped or stages all
+    // selected sibling files while the core reads the VPL and its FPSX files.
     nonisolated static func installDevice(vplPath: String,
                                           progress: (@Sendable (Double) -> Void)? = nil,
                                           cancelCheck: (@Sendable () -> Bool)? = nil) -> EKA2L1InstallResult {

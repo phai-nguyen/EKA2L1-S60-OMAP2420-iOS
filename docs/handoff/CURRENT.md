@@ -52,7 +52,8 @@ Confirmed in pinned upstream:
 Committed:
 - research note: `docs/research/EKA2L1-INSERTION-POINTS-2026-10-07.md`
 - first diagnostic patch: `patches/code/apply-n95-omap2420-probe1.py`
-- build workflow now applies and verifies marker `N95OMAP-PROBE1`.
+- build workflow applies and verifies marker `N95OMAP-PROBE1`.
+- iOS diagnostic log pack `N95OMAP-LOGPACK1`: `EKA2L1.log`, `EKA2L1_TakeThis.log`, `EKA2L1_Persistent.log`, `EKA2L1_Persistent-prev.log` under `Documents/data/`.
 
 PROBE1 only records the first unsupported RM-159 access with direction, address, PC, LR, CPSR and thread. It deliberately does not fabricate MMIO values or broad-map memory.
 

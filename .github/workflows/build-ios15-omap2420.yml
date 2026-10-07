@@ -41,10 +41,13 @@ jobs:
         id: clone
         run: |
           set -euo pipefail
-          git clone https://github.com/EKA2L1/EKA2L1.git upstream
+          git init upstream
           cd upstream
-          git checkout "$EKA2L1_UPSTREAM_COMMIT"
-          git submodule update --init --recursive
+          git remote add origin https://github.com/EKA2L1/EKA2L1.git
+          git -c protocol.version=2 fetch --depth 1 origin "$EKA2L1_UPSTREAM_COMMIT"
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = "$EKA2L1_UPSTREAM_COMMIT"
+          git submodule update --init --recursive --depth 1 --jobs 8
 
       - name: Apply iOS 15 compatibility layer
         id: ios15
@@ -67,17 +70,6 @@ jobs:
           set -euo pipefail
           python3 patches/code/apply-n95-omap2420-probe1.py upstream
           grep -q 'N95OMAP-PROBE1' upstream/src/emu/kernel/src/kernel.cpp
-
-      - name: Install ccache
-        run: brew install ccache
-
-      - name: Restore compiler cache
-        uses: actions/cache@v6
-        with:
-          path: ~/Library/Caches/ccache
-          key: eka2l1-ios-ccache-${{ runner.os }}-ios${{ env.EKA2L1_IOS_DEPLOYMENT_TARGET }}-${{ env.EKA2L1_UPSTREAM_COMMIT }}-${{ github.sha }}
-          restore-keys: |
-            eka2l1-ios-ccache-${{ runner.os }}-ios${{ env.EKA2L1_IOS_DEPLOYMENT_TARGET }}-${{ env.EKA2L1_UPSTREAM_COMMIT }}-
 
       - name: Restore incremental Xcode build
         uses: actions/cache@v6

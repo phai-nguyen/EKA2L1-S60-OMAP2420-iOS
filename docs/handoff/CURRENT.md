@@ -57,7 +57,7 @@ Committed:
 
 PROBE1 logs EKA2 access violations with direction, address, PC, LR, CPSR and thread. The current patch logs every such violation and relies on the RM-159 device-test contract for this branch; it does not gate by firmware identity or latch only the first fault. It deliberately does not fabricate MMIO values or broad-map memory.
 
-Latest verified build result: [run 37632331108](https://github.com/phai-nguyen/EKA2L1-S60-OMAP2420-iOS/actions/runs/37632331108) on commit `fa9c81f` successfully compiled the app, confirming the `CompatAnyShape.makePath` Sendable fix. The workflow then failed deployment verification because `MinimumOSVersion=15` did not match `15.0`; no IPA was packaged. Both build/repack workflows now quote the deployment target as `"15.0"` to prevent YAML numeric coercion. Full rebuild verification is pending; see `docs/checkpoints/LAST_STATE.md` for exact evidence.
+Latest verified build result: [run 37663349331](https://github.com/phai-nguyen/EKA2L1-S60-OMAP2420-iOS/actions/runs/37663349331) on commit `b5a4833` completed successfully and published both unsigned IPA variants. It took about 31 minutes. The build workflow now tests a shallow fetch of the pinned upstream commit and parallel shallow submodules to reduce the source checkout stage. It also removes the unused ccache setup: the Xcode generator does not use CMake's compiler launcher, and the previous run saved no ccache directory. The incremental Xcode, FFmpeg and base-app caches remain in place. The optimized workflow has not yet completed on GitHub Actions; see `docs/checkpoints/LAST_STATE.md` for build evidence.
 
 No RM-159 device log has been collected from this repository yet.
 

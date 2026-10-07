@@ -1,6 +1,6 @@
 # LAST STATE — N95 RM-159
 
-Status: PROBE1 APP COMPILES — DEPLOYMENT TARGET WORKFLOW FIX AWAITING REBUILD; DEVICE EVIDENCE PENDING
+Status: PROBE1 IOS BUILD PASSED — DEVICE EVIDENCE PENDING
 
 ## Completed
 - Created dedicated repository `phai-nguyen/EKA2L1-S60-OMAP2420-iOS`.
@@ -26,9 +26,11 @@ Status: PROBE1 APP COMPILES — DEPLOYMENT TARGET WORKFLOW FIX AWAITING REBUILD;
 - All three patches apply successfully to pinned upstream `3afd85d249f4eef16071f6fdbbbf44e49e4072f7`; generated-source whitespace checks pass. These checks do not establish iOS build success.
 - Run [37632331108](https://github.com/phai-nguyen/EKA2L1-S60-OMAP2420-iOS/actions/runs/37632331108), commit `fa9c81f079722b6f5d04956c7f6f8a4cf7d91fb5`, reported `BUILD SUCCEEDED` but failed deployment verification: `MinimumOSVersion=15` did not match the required string `15.0`. Resource verification and IPA packaging were skipped.
 - Both build/repack workflows now quote deployment target as `"15.0"`, preserving the version string instead of YAML numeric coercion. Local YAML parsing verifies the string type and exact value; full workflow verification is pending.
+- Run [37663349331](https://github.com/phai-nguyen/EKA2L1-S60-OMAP2420-iOS/actions/runs/37663349331), commit `b5a4833644462fd1cdc4d9b79ce8555153e0eae2`, passed every build, verification and packaging step and published both unsigned IPA variants.
+- That run took about 31 minutes. Its ccache restore missed and the post-job save reported that the cache directory did not exist. CMake's compiler launcher only applies to Make/Ninja generators; the iOS script uses Xcode. Removed the unused ccache installation/cache steps, kept the Xcode/FFmpeg/base-app caches, and switched upstream retrieval to a pinned shallow fetch plus eight parallel shallow submodule jobs. A clean local checkout verified the exact upstream SHA and all 47 recursive submodules; the new CI run is still required to measure the speedup.
 
 ## Not done
-- The full workflow after quoting the deployment target has not yet been verified; no IPA from the latest checked run.
+- The optimized checkout workflow has not yet been verified on GitHub Actions.
 - No OMAP2420 MMIO implementation yet.
 - No RM-159 firmware device log from PROBE1 yet.
 - No N82/N93/E90 branches yet.

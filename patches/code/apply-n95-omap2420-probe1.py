@@ -25,11 +25,11 @@ old = """    bool kernel_system::cpu_handle_access_violation(arm::core *core, co
         if (is_eka1()) {
 """
 new = """    bool kernel_system::cpu_handle_access_violation(arm::core *core, const address occurred, const bool read) {
-        device *current_device = (sys_ && sys_->get_device_manager())
-            ? sys_->get_device_manager()->get_current()
-            : nullptr;
-
-        if (current_device && (common::compare_ignore_case(current_device->firmware_code.c_str(), "RM-159") == 0)) {
+        // This branch is dedicated to N95 RM-159. Keep PROBE1 inside the kernel target
+        // without importing the system module (epockern does not expose system/devices.h
+        // in its include path). Restrict it to EKA2 and use the branch/device-test
+        // contract to identify RM-159 evidence.
+        if (!is_eka1()) {
             kernel::thread *thr = crr_thread();
             LOG_ERROR(KERNEL,
                 "N95OMAP-PROBE1 access={} addr=0x{:08X} pc=0x{:08X} lr=0x{:08X} cpsr=0x{:08X} thread={}",

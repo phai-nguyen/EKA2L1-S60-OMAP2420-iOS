@@ -1,6 +1,6 @@
 # LAST STATE — N95 RM-159
 
-Status: PROBE1 BUILD FAILED — SWIFT SENDABLE FIX PREPARED; DEVICE EVIDENCE PENDING
+Status: PROBE1 APP COMPILES — DEPLOYMENT TARGET WORKFLOW FIX AWAITING REBUILD; DEVICE EVIDENCE PENDING
 
 ## Completed
 - Created dedicated repository `phai-nguyen/EKA2L1-S60-OMAP2420-iOS`.
@@ -22,11 +22,13 @@ Status: PROBE1 BUILD FAILED — SWIFT SENDABLE FIX PREPARED; DEVICE EVIDENCE PEN
 - Run [37625926247](https://github.com/phai-nguyen/EKA2L1-S60-OMAP2420-iOS/actions/runs/37625926247), commit `85a5089af76217d8ff5503a13b7b7b22ea3ead49`, failed during Swift compilation with Xcode 26.6.
 - iOS 15, LOGPACK1 and PROBE1 patch stages all passed. No IPA was packaged.
 - Compiler error: `IOS15Compat.swift:170`: `CompatAnyShape` conforms to `Sendable` through `Shape`, but stored closure `makePath` has non-Sendable type `(CGRect) -> Path`.
-- Updated the generated closure type to `@Sendable (CGRect) -> Path`; a new Xcode build is required to verify it.
+- Updated the generated closure type to `@Sendable (CGRect) -> Path`; run 37632331108 verified successful app compilation.
 - All three patches apply successfully to pinned upstream `3afd85d249f4eef16071f6fdbbbf44e49e4072f7`; generated-source whitespace checks pass. These checks do not establish iOS build success.
+- Run [37632331108](https://github.com/phai-nguyen/EKA2L1-S60-OMAP2420-iOS/actions/runs/37632331108), commit `fa9c81f079722b6f5d04956c7f6f8a4cf7d91fb5`, reported `BUILD SUCCEEDED` but failed deployment verification: `MinimumOSVersion=15` did not match the required string `15.0`. Resource verification and IPA packaging were skipped.
+- Both build/repack workflows now quote deployment target as `"15.0"`, preserving the version string instead of YAML numeric coercion. Local YAML parsing verifies the string type and exact value; full workflow verification is pending.
 
 ## Not done
-- The build after the Swift Sendable fix has not yet been verified.
+- The full workflow after quoting the deployment target has not yet been verified; no IPA from the latest checked run.
 - No OMAP2420 MMIO implementation yet.
 - No RM-159 firmware device log from PROBE1 yet.
 - No N82/N93/E90 branches yet.

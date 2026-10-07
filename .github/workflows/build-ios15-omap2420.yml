@@ -24,7 +24,7 @@ jobs:
     timeout-minutes: 120
     env:
       EKA2L1_IOS_CONFIGURATION: Release
-      EKA2L1_IOS_DEPLOYMENT_TARGET: 15.0
+      EKA2L1_IOS_DEPLOYMENT_TARGET: "15.0"
       # iOS 18.7 can kill a sideloaded app while the upstream JIT probe executes a generated page.
       # Localization test builds use the interpreter so the app can always reach the UI.
       EKA2L1_IOS_DYNARMIC: OFF

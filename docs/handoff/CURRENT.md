@@ -57,7 +57,7 @@ Committed:
 
 PROBE1 logs EKA2 access violations with direction, address, PC, LR, CPSR and thread. The current patch logs every such violation and relies on the RM-159 device-test contract for this branch; it does not gate by firmware identity or latch only the first fault. It deliberately does not fabricate MMIO values or broad-map memory.
 
-Latest verified build result: [run 37625926247](https://github.com/phai-nguyen/EKA2L1-S60-OMAP2420-iOS/actions/runs/37625926247) failed at Swift compilation on commit `85a5089`. All three patch stages passed, but no IPA was packaged. The iOS 15 shim's `CompatAnyShape.makePath` closure now declares `@Sendable` to satisfy the current SDK's `Shape` conformance. The rebuild is pending; see `docs/checkpoints/LAST_STATE.md` for exact evidence.
+Latest verified build result: [run 37632331108](https://github.com/phai-nguyen/EKA2L1-S60-OMAP2420-iOS/actions/runs/37632331108) on commit `fa9c81f` successfully compiled the app, confirming the `CompatAnyShape.makePath` Sendable fix. The workflow then failed deployment verification because `MinimumOSVersion=15` did not match `15.0`; no IPA was packaged. Both build/repack workflows now quote the deployment target as `"15.0"` to prevent YAML numeric coercion. Full rebuild verification is pending; see `docs/checkpoints/LAST_STATE.md` for exact evidence.
 
 No RM-159 device log has been collected from this repository yet.
 

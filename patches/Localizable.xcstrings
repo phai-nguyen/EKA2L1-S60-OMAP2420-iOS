@@ -3577,6 +3577,138 @@
         }
       }
     },
+    "import.source.firmware": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmware VPL / FPSX"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "固件 VPL / FPSX"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmware VPL / FPSX"
+          }
+        }
+      }
+    },
+    "import.firmwareFolder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmware folder"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "固件文件夹"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thư mục firmware"
+          }
+        }
+      }
+    },
+    "import.firmwareVPL": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VPL file"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VPL 文件"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File VPL"
+          }
+        }
+      }
+    },
+    "import.firmwareHint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select the folder containing the VPL and its FPSX files. The first variant in the VPL will be installed."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择包含 VPL 和 FPSX 文件的文件夹。将安装 VPL 中的第一个版本。"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn thư mục chứa file VPL và các file FPSX. Ứng dụng sẽ cài biến thể đầu tiên trong VPL."
+          }
+        }
+      }
+    },
+    "import.error.noVPL": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No VPL file was found in this folder."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此文件夹中没有 VPL 文件。"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không tìm thấy file VPL trong thư mục này."
+          }
+        }
+      }
+    },
+    "import.error.firmwareFolder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not read the firmware folder."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法读取固件文件夹。"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không đọc được thư mục firmware."
+          }
+        }
+      }
+    },
     "import.source.looseFiles": {
       "localizations": {
         "en": {

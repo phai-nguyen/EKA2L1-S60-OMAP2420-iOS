@@ -61,6 +61,9 @@ Latest verified build result: [run 37663349331](https://github.com/phai-nguyen/E
 
 No RM-159 device log has been collected from this repository yet.
 
+## VPL firmware import
+The iOS device installer now has a VPL/FPSX source. Choose the folder containing the `.vpl` and its adjacent `.fpsx` files, then choose a VPL from that folder. The folder remains security-scoped during installation so the existing EKA2L1 firmware installer can read the referenced files. As in the Android frontend, installation uses the first variant in a VPL. ROM/RPKG and 7z import remain available. The VPL workflow has passed local patch integration checks but still needs an iOS CI build and an RM-159 device test.
+
 ## Next engineering task
 1. Verify the iOS build containing `N95OMAP-PROBE1`.
 2. Install an RM-159 firmware on that build.

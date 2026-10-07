@@ -55,6 +55,14 @@ jobs:
           set -euo pipefail
           python3 patches/code/apply-ios15-compat.py upstream
 
+      - name: Add VPL firmware import
+        id: vpl
+        run: |
+          set -euo pipefail
+          python3 patches/code/apply-n95-vpl-import.py upstream
+          grep -q 'N95VPL-IMPORT1' upstream/src/emu/ios/App/ContentView.swift
+          grep -q 'installDeviceWithVplPath' upstream/src/emu/ios/Bridge/IosEmulator.mm
+
       - name: Apply persistent diagnostic logs
         id: logpack
         run: |
@@ -168,6 +176,7 @@ jobs:
           CHECKOUT_OUTCOME: ${{ steps.checkout.outcome }}
           CLONE_OUTCOME: ${{ steps.clone.outcome }}
           IOS15_OUTCOME: ${{ steps.ios15.outcome }}
+          VPL_OUTCOME: ${{ steps.vpl.outcome }}
           LOGPACK_OUTCOME: ${{ steps.logpack.outcome }}
           PROBE1_OUTCOME: ${{ steps.probe1.outcome }}
           BUILD_OUTCOME: ${{ steps.build.outcome }}
@@ -196,6 +205,7 @@ jobs:
             echo "checkout=${CHECKOUT_OUTCOME}"
             echo "clone_upstream=${CLONE_OUTCOME}"
             echo "ios15_compat=${IOS15_OUTCOME}"
+            echo "vpl_firmware_import=${VPL_OUTCOME}"
             echo "diagnostic_log_pack=${LOGPACK_OUTCOME}"
             echo "n95_probe1=${PROBE1_OUTCOME}"
             echo "build_unsigned_app=${BUILD_OUTCOME}"
@@ -223,6 +233,7 @@ jobs:
             echo "| Checkout | ${CHECKOUT_OUTCOME} |"
             echo "| Clone upstream | ${CLONE_OUTCOME} |"
             echo "| iOS 15 compatibility | ${IOS15_OUTCOME} |"
+            echo "| VPL firmware import | ${VPL_OUTCOME} |"
             echo "| Diagnostic log pack | ${LOGPACK_OUTCOME} |"
             echo "| N95 PROBE1 | ${PROBE1_OUTCOME} |"
             echo "| Build app | ${BUILD_OUTCOME} |"

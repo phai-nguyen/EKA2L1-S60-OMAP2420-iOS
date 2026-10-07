@@ -49,6 +49,12 @@ jobs:
           set -euo pipefail
           python3 patches/code/apply-ios15-compat.py upstream
 
+      - name: Apply N95 OMAP2420 PROBE1
+        run: |
+          set -euo pipefail
+          python3 patches/code/apply-n95-omap2420-probe1.py upstream
+          grep -q 'N95OMAP-PROBE1' upstream/src/emu/kernel/src/kernel.cpp
+
       - name: Install ccache
         run: brew install ccache
 

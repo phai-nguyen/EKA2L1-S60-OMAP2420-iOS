@@ -49,6 +49,14 @@ jobs:
           set -euo pipefail
           python3 patches/code/apply-ios15-compat.py upstream
 
+      - name: Apply persistent diagnostic logs
+        run: |
+          set -euo pipefail
+          python3 patches/code/apply-ios-diagnostic-logs.py upstream
+          grep -q 'N95OMAP-LOGPACK1' upstream/src/emu/common/src/log.cpp
+          grep -q 'EKA2L1_Persistent.log' upstream/src/emu/common/src/log.cpp
+          grep -q 'EKA2L1_Persistent-prev.log' upstream/src/emu/common/src/log.cpp
+
       - name: Apply N95 OMAP2420 PROBE1
         run: |
           set -euo pipefail

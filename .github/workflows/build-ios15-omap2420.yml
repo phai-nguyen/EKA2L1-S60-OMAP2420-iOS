@@ -71,6 +71,14 @@ jobs:
           python3 patches/code/apply-n95-rofs-external-ref-fix.py upstream
           grep -q 'N95ROFS-EXTLINK1' upstream/src/emu/loader/src/rofs.cpp
           python3 tests/test_n95_rofs_external_ref_patch.py
+      - name: Add N95 VPL UDA progress and cancellation
+        id: udafix
+        run: |
+          set -euo pipefail
+          python3 patches/code/apply-n95-vpl-uda-progress.py upstream
+          grep -q 'N95VPL-UDA-PROGRESS1' upstream/src/emu/system/src/installation/firmware.cpp
+          python3 tests/test_n95_vpl_uda_progress_patch.py
+
       - name: Apply persistent diagnostic logs
         id: logpack
         run: |
@@ -186,6 +194,7 @@ jobs:
           IOS15_OUTCOME: ${{ steps.ios15.outcome }}
           VPL_OUTCOME: ${{ steps.vpl.outcome }}
           ROFSFIX_OUTCOME: ${{ steps.rofsfix.outcome }}
+          UDAFIX_OUTCOME: ${{ steps.udafix.outcome }}
           LOGPACK_OUTCOME: ${{ steps.logpack.outcome }}
           PROBE1_OUTCOME: ${{ steps.probe1.outcome }}
           BUILD_OUTCOME: ${{ steps.build.outcome }}
@@ -216,6 +225,7 @@ jobs:
             echo "ios15_compat=${IOS15_OUTCOME}"
             echo "vpl_firmware_import=${VPL_OUTCOME}"
             echo "n95_rofs_external_ref_fix=${ROFSFIX_OUTCOME}"
+            echo "n95_vpl_uda_progress_cancel=${UDAFIX_OUTCOME}"
             echo "diagnostic_log_pack=${LOGPACK_OUTCOME}"
             echo "n95_probe1=${PROBE1_OUTCOME}"
             echo "build_unsigned_app=${BUILD_OUTCOME}"
@@ -245,6 +255,7 @@ jobs:
             echo "| iOS 15 compatibility | ${IOS15_OUTCOME} |"
             echo "| VPL firmware import | ${VPL_OUTCOME} |"
             echo "| N95 ROFS external-reference fix | ${ROFSFIX_OUTCOME} |"
+            echo "| N95 UDA progress/cancellation | ${UDAFIX_OUTCOME} |"
             echo "| Diagnostic log pack | ${LOGPACK_OUTCOME} |"
             echo "| N95 PROBE1 | ${PROBE1_OUTCOME} |"
             echo "| Build app | ${BUILD_OUTCOME} |"

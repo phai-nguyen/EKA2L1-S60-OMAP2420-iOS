@@ -75,3 +75,11 @@ An on-device report says both VPL selection methods show the chosen VPL, but tap
 
 ## New-chat starter prompt
 Continue the dedicated N95 OMAP2420 project from `docs/handoff/CURRENT.md` in repo `phai-nguyen/EKA2L1-S60-OMAP2420-iOS`, branch `n95-rm159`. This project targets Nokia N95 RM-159 / S60v3 FP1 on iOS 15+. It is separate from RH-29/N-Gage, RM-356/5800, RM-596/N8 and WP7. Read `AGENTS.md`, `docs/checkpoints/LAST_STATE.md`, and the hardware notes before changing code.
+
+
+## RM-159 firmware import diagnosis — 2026-10-08
+The device log from EKA2L1 iOS v26.7.0 (HEAD-3afd85d) stops after the ROFS parser warns about an untested ROFx variant and emits 1,666 short-read warnings from rofs.cpp:150. The regular and Persistent log files are byte-identical. This matches the failure signature in upstream issue #499 for an N82 VPL import.
+
+The pinned ROFS extractor subtracts the ROFS file base from an unsigned file address and attempts to extract every entry as payload data. RM-159 ROFx has entries that point back to files supplied by the core ROM image. Those references must leave the already-extracted ROM files intact. The new N95ROFS-EXTLINK1 patch skips addresses below the ROFS data base, validates each in-image range before creating a file, and propagates short-read/write failures so malformed data stops with an error instead of appearing to finish at 100%.
+
+The patch and its workflow regression check are committed; iOS build and on-device retest are pending. No OMAP2420 hardware behavior has been changed.

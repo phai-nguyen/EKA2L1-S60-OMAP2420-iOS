@@ -1,6 +1,6 @@
 # LAST STATE — N95 RM-159
 
-Status: PROBE1 IOS BUILD PASSED — DEVICE EVIDENCE PENDING
+Status: VPL INSTALL FAILURE DIAGNOSED — ROFS FIX BUILD PENDING
 
 ## Completed
 - Created dedicated repository `phai-nguyen/EKA2L1-S60-OMAP2420-iOS`.
@@ -48,3 +48,14 @@ Status: PROBE1 IOS BUILD PASSED — DEVICE EVIDENCE PENDING
 
 ## Next checkpoint condition
 Advance this checkpoint after the PROBE1 iOS build passes and a real RM-159 run yields the first exact access-violation evidence.
+
+
+## RM-159 VPL import log — 2026-10-08
+- User tested the current iOS build with RM-159 v31 firmware and waited at the installer’s 100% “decompressing dump” stage.
+- Both supplied logs are byte-identical and identify EKA2L1 iOS v26.7.0 pinned to upstream 3afd85d. They stop after an untested ROFx warning followed by 1,666 short-read warnings from rofs.cpp:150.
+- The pattern matches upstream EKA2L1 issue #499’s N82 VPL import report. Inspection of the pinned parser shows ROFS files whose addresses refer to the already-extracted core ROM are incorrectly treated as in-image file data; unsigned subtraction then seeks beyond the ROFS image.
+- Added patches/code/apply-n95-rofs-external-ref-fix.py: skip pre-volume ROM references without truncating the existing ROM file, validate file ranges, and fail fast on actual short reads/writes. Added a regression check and a dedicated workflow stage.
+- Local validation: patch applied to the exact pinned upstream rofs.cpp source; patch regression script passed. Full iOS compile and RM-159 device verification remain pending.
+
+## Next checkpoint condition
+Build the ROFS fix on n95-rm159, install it on the iPhone, and confirm VPL installation reaches completion without rofs.cpp:150 short-read spam. Then capture the first N95OMAP-PROBE1 access fault from a boot attempt.

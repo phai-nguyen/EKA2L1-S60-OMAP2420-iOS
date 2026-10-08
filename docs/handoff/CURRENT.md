@@ -82,4 +82,4 @@ The device log from EKA2L1 iOS v26.7.0 (HEAD-3afd85d) stops after the ROFS parse
 
 The pinned ROFS extractor subtracts the ROFS file base from an unsigned file address and attempts to extract every entry as payload data. RM-159 ROFx has entries that point back to files supplied by the core ROM image. Those references must leave the already-extracted ROM files intact. The new N95ROFS-EXTLINK1 patch skips addresses below the ROFS data base, validates each in-image range before creating a file, and propagates short-read/write failures so malformed data stops with an error instead of appearing to finish at 100%.
 
-The patch and its workflow regression check are committed; iOS build and on-device retest are pending. No OMAP2420 hardware behavior has been changed.
+The patch and its workflow regression check are committed. iOS build run 37713761051 passed the ROFS patch stage, app compilation, iOS 15 and Vietnamese resource checks, and packaged both unsigned IPA variants. On-device retest is pending. No OMAP2420 hardware behavior has been changed.

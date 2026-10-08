@@ -1,6 +1,6 @@
 # LAST STATE — N95 RM-159
 
-Status: VPL INSTALL FAILURE DIAGNOSED — ROFS FIX BUILD PENDING
+Status: ROFS FIX IOS BUILD PASSED — DEVICE RETEST PENDING
 
 ## Completed
 - Created dedicated repository `phai-nguyen/EKA2L1-S60-OMAP2420-iOS`.
@@ -58,4 +58,4 @@ Advance this checkpoint after the PROBE1 iOS build passes and a real RM-159 run 
 - Local validation: patch applied to the exact pinned upstream rofs.cpp source; patch regression script passed. Full iOS compile and RM-159 device verification remain pending.
 
 ## Next checkpoint condition
-Build the ROFS fix on n95-rm159, install it on the iPhone, and confirm VPL installation reaches completion without rofs.cpp:150 short-read spam. Then capture the first N95OMAP-PROBE1 access fault from a boot attempt.
+Install the IPA from run 37713761051 on the iPhone, confirm VPL installation reaches completion without rofs.cpp:150 short-read spam, then capture the first N95OMAP-PROBE1 access fault from a boot attempt.

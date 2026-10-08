@@ -83,3 +83,14 @@ The device log from EKA2L1 iOS v26.7.0 (HEAD-3afd85d) stops after the ROFS parse
 The pinned ROFS extractor subtracts the ROFS file base from an unsigned file address and attempts to extract every entry as payload data. RM-159 ROFx has entries that point back to files supplied by the core ROM image. Those references must leave the already-extracted ROM files intact. The new N95ROFS-EXTLINK1 patch skips addresses below the ROFS data base, validates each in-image range before creating a file, and propagates short-read/write failures so malformed data stops with an error instead of appearing to finish at 100%.
 
 The patch and its workflow regression check are committed. iOS build run 37713761051 passed the ROFS patch stage, app compilation, iOS 15 and Vietnamese resource checks, and packaged both unsigned IPA variants. On-device retest is pending. No OMAP2420 hardware behavior has been changed.
+
+## iOS Files picker feedback fix — 2026-10-08
+The latest screen recording shows the iOS Files picker returning to the installer without a selected folder/files value after the user presses “Mở”. The VPL importer previously returned silently for picker errors or an empty result, so the device gave no indication why the selection was not accepted.
+
+- Updated `apply-n95-vpl-import.py` to surface non-cancellation picker errors and empty/no-VPL results in an alert, including folder read errors and duplicate selected filenames.
+- Added workflow verification for marker `N95VPL-PICKER-FEEDBACK1`.
+- Build [run 37718874639](https://github.com/phai-nguyen/EKA2L1-S60-OMAP2420-iOS/actions/runs/37718874639) completed successfully, including app compilation, iOS 15 validation, Vietnamese resource checks, and ESign-match IPA packaging.
+- This adds visible failure feedback; it does not yet prove the underlying Files picker selection succeeds. Device retest is still required.
+
+## Next test
+Install the ESign-match IPA from run 37718874639 and retry selecting the firmware folder or files. If selection fails, capture the new alert text; if the selection is accepted, continue with the RM-159 VPL install and export the fresh logs.

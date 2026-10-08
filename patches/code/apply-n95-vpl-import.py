@@ -129,11 +129,25 @@ replace(swift,
 replace(swift,
     '''        guard case .success(let urls) = result, let url = urls.first else { return }
         let kind = expectedExtension(for: target)''',
-    '''        guard case .success(let urls) = result, let url = urls.first else { return }
+    '''        // N95VPL-PICKER-FEEDBACK1: never silently swallow Files picker failures.
+        if case .failure(let error) = result {
+            if error is CancellationError || (error as? CocoaError)?.code == .userCancelled {
+                return
+            }
+            errorMessage = error.localizedDescription
+            showingFirmwareInstallError = target == .firmwareFolder || target == .firmwareFiles
+            return
+        }
+        guard case .success(let urls) = result, let url = urls.first else {
+            errorMessage = String(localized: "import.error.noVPL")
+            showingFirmwareInstallError = target == .firmwareFolder || target == .firmwareFiles
+            return
+        }
         if target == .firmwareFiles {
             let names = urls.map(\\.lastPathComponent)
             guard Set(names.map { $0.lowercased() }).count == names.count else {
                 errorMessage = String(localized: "import.error.duplicateFirmwareFile")
+                showingFirmwareInstallError = true
                 return
             }
             let candidates = urls.filter {
@@ -141,6 +155,7 @@ replace(swift,
             }.sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
             guard !candidates.isEmpty else {
                 errorMessage = String(localized: "import.error.noVPL")
+                showingFirmwareInstallError = true
                 return
             }
             firmwareFolder = nil
@@ -162,6 +177,7 @@ replace(swift,
                 }.sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
                 guard !candidates.isEmpty else {
                     errorMessage = String(localized: "import.error.noVPL")
+                    showingFirmwareInstallError = true
                     firmwareFolder = nil
                     vplFiles = []
                     return
@@ -175,6 +191,7 @@ replace(swift,
                 firmwareFolder = nil
                 vplFiles = []
                 errorMessage = String(localized: "import.error.firmwareFolder")
+                showingFirmwareInstallError = true
             }
             return
         }

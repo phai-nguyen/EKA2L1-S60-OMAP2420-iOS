@@ -7,7 +7,7 @@ import sys
 import tempfile
 
 
-PATCH = Path(__file__).with_name("apply-n95-vpl-uda-progress.py")
+PATCH = Path(__file__).parents[1] / "patches/code/apply-n95-vpl-uda-progress.py"
 OLD = r'''    static void extract_file(Fat::Image &img, Fat::Entry &entry, const std::string &path) {
         const std::u16string filename_16 = entry.get_filename();
         std::string filename = eka2l1::add_path(path, common::ucs2_to_utf8(filename_16));

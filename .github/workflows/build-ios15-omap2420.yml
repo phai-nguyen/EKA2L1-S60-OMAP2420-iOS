@@ -9,6 +9,7 @@ on:
       - "patches/code/**"
       - "patches/**/*.patch"
       - "patches/**/*.py"
+      - "tests/**"
   workflow_dispatch:
 
 permissions:

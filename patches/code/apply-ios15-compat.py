@@ -175,7 +175,8 @@ struct CompatFileShareLink<Label: View>: View {
 
 
 struct CompatAnyShape: Shape {
-    private let makePath: (CGRect) -> Path
+    // Shape is Sendable in current SDKs; its stored closure must be too.
+    private let makePath: @Sendable (CGRect) -> Path
 
     init<S: Shape>(_ shape: S) {
         makePath = { rect in shape.path(in: rect) }

@@ -1,6 +1,6 @@
 # LAST STATE — N95 RM-159
 
-Status: ROFS FIX IOS BUILD PASSED — DEVICE RETEST PENDING
+Status: ROFS FIX + PICKER FEEDBACK IOS BUILD PASSED — DEVICE RETEST PENDING
 
 ## Completed
 - Created dedicated repository `phai-nguyen/EKA2L1-S60-OMAP2420-iOS`.
@@ -59,3 +59,10 @@ Advance this checkpoint after the PROBE1 iOS build passes and a real RM-159 run 
 
 ## Next checkpoint condition
 Install the IPA from run 37713761051 on the iPhone, confirm VPL installation reaches completion without rofs.cpp:150 short-read spam, then capture the first N95OMAP-PROBE1 access fault from a boot attempt.
+
+## iOS Files picker feedback — 2026-10-08
+- Screen recording showed the Files picker returning without a selected firmware folder/files value after “Mở”.
+- Previous importer code silently returned on picker error or empty result. It now presents the error for non-cancellation failures and empty/no-VPL results; duplicate file selections and folder listing failures also show an alert.
+- Marker `N95VPL-PICKER-FEEDBACK1` is checked by the workflow.
+- Build [run 37718874639](https://github.com/phai-nguyen/EKA2L1-S60-OMAP2420-iOS/actions/runs/37718874639) passed compilation, iOS 15 target, Vietnamese resources, and IPA packaging.
+- Device test pending. Do not claim the Files “Mở” behavior is fixed until the iPhone test accepts a folder or reports the new alert.
